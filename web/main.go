@@ -3,21 +3,51 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
 
 func main() {
 
+	type profile struct {
+		Name string
+		Age  int
+	}
+
+	profiles := make(map[string]*profile)
+	profiles["devdiver"] = &profile{"devdiver", 23}
+	profiles["go"] = &profile{"go", 10}
+
 	r := mux.NewRouter()
 
 	memberRouter := r.PathPrefix("/member").Subrouter()
-	memberRouter.HandleFunc("/{name}/age/{age}", func(w http.ResponseWriter, r *http.Request) {
+	memberRouter.HandleFunc("/{name}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		name := vars["name"]
-		age := vars["age"]
+		profile := profiles[name]
 
-		fmt.Fprintf(w, "member %s 's profile in %s\n", name, age)
+		fmt.Fprintf(w, "member %s 's profile in %d\n", profile.Name, profile.Age)
+	}).Methods("GET")
+
+	memberRouter.HandleFunc("/{name}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		name := vars["name"]
+		profile := profiles[name]
+
+		err := r.ParseForm()
+		if err != nil {
+			fmt.Fprintf(w, "error parsing form data: %v", err)
+			return
+		}
+
+		ageStr := r.PostForm.Get("age")
+		age, err := strconv.Atoi(ageStr)
+		if err != nil {
+			fmt.Fprintf(w, "cannot convert age %s to number", ageStr)
+		}
+		profile.Age = age
+		fmt.Fprintf(w, "%s change age to %d", name, age)
 	})
 
 	fs := http.FileServer(http.Dir("file/"))
