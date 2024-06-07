@@ -1,9 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -35,17 +35,16 @@ func main() {
 		name := vars["name"]
 		profile := profiles[name]
 
-		err := r.ParseForm()
+		var data struct {
+			Age int `json:"age"`
+		}
+		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			fmt.Fprintf(w, "error parsing form data: %v", err)
+			http.Error(w, "Invalid JSON data", http.StatusBadRequest)
 			return
 		}
+		age := data.Age
 
-		ageStr := r.PostForm.Get("age")
-		age, err := strconv.Atoi(ageStr)
-		if err != nil {
-			fmt.Fprintf(w, "cannot convert age %s to number", ageStr)
-		}
 		profile.Age = age
 		fmt.Fprintf(w, "%s change age to %d", name, age)
 	})
