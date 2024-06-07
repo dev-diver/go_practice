@@ -10,7 +10,9 @@ import (
 func main() {
 
 	r := mux.NewRouter()
-	r.HandleFunc("/member/{name}/age/{age}", func(w http.ResponseWriter, r *http.Request) {
+
+	memberRouter := r.PathPrefix("/member").Subrouter()
+	memberRouter.HandleFunc("/{name}/age/{age}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		name := vars["name"]
 		age := vars["age"]
